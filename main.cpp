@@ -1,5 +1,7 @@
 #include <splashkit.h>
 
+// hi
+
 const float GRAVITY = 0.08f;
 const int MAX_SPEED = 5;
 const int JUMP_SPEED = 2;
