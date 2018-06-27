@@ -24,7 +24,7 @@ struct pole_data {
     bool score_limiter;
     sprite up_pole;
     sprite down_pole;
-    sprite coin;
+    // sprite coin;
 };
 typedef struct pole_data poles[NUM_POLES];
 
@@ -73,17 +73,10 @@ pole_data get_random_poles() {
     sprite_set_dx(result.up_pole, FOREGROUND_SCROLL_SPEED);
     sprite_set_dx(result.down_pole, FOREGROUND_SCROLL_SPEED);
 
-    result.coin = create_sprite(bitmap_named("Coin"));
-    sprite_set_x(result.coin, sprite_x(result.up_pole));
-    sprite_set_y(result.coin, (sprite_y(result.down_pole) + sprite_y(result.up_pole))/2);
-    sprite_set_dx(result.coin, FOREGROUND_SCROLL_SPEED);
-
-    // if (rnd(2) == 1) {
-    //   result.coin = create_sprite(bitmap_named("Coin"));
-    //   sprite_set_x(result.coin, sprite_x(result.up_pole));
-    //   sprite_set_y(result.coin, (sprite_y(result.down_pole) + sprite_y(result.up_pole))/2);
-    //   sprite_set_dx(result.coin, FOREGROUND_SCROLL_SPEED);
-    // }
+    // result.coin = create_sprite(bitmap_named("Coin"));
+    // sprite_set_x(result.coin, sprite_x(result.up_pole));
+    // sprite_set_y(result.coin, (screen_height() - sprite_height(game.scene.foreground) - sprite_height(game.scene.foreroof)) / 2 + sprite_height(game.scene.foreground));
+    // sprite_set_dx(result.coin, FOREGROUND_SCROLL_SPEED);
 
     result.score_limiter = true;
 
@@ -155,6 +148,7 @@ void update_velocity(sprite player) {
 void reset_pole_data(pole_data &poles) {
   free_sprite(poles.up_pole);
   free_sprite(poles.down_pole);
+  // free_sprite(poles.coin);
 
   poles = get_random_poles();
 }
@@ -162,6 +156,7 @@ void reset_pole_data(pole_data &poles) {
 void update_poles(pole_data &poles, player_data &player) {
     update_sprite(poles.up_pole);
     update_sprite(poles.down_pole);
+    // update_sprite(poles.coin);
 
     if ((sprite_x(poles.up_pole) < sprite_x(player.sprite_data)) && poles.score_limiter) {
       poles.score_limiter = false;
@@ -181,7 +176,7 @@ void update_pole_array(pole_data pole_array[], player_data &player) {
 void draw_poles(pole_data &poles) {
     draw_sprite(poles.up_pole);
     draw_sprite(poles.down_pole);
-    draw_sprite(poles.coin);
+    // draw_sprite(poles.coin);
 }
 void draw_pole_array(pole_data pole_array[]) {
   for (int i = 0; i < NUM_POLES; i++) {
@@ -223,11 +218,25 @@ void reset_game(game_data &game) {
   }
 }
 
+void check_for_obstacle_overlap(game_data &game) {
+  for (int i = 0; i < NUM_POLES; ++i) {
+    for (int b = 0; b < NUM_POLES; ++b) {
+      if (i != b) {
+        if (sprite_collision(game.poles[i].up_pole, game.poles[b].up_pole)) {
+          reset_pole_data(game.poles[b]);
+          game.poles[b] = get_random_poles();
+        }
+      }
+    }
+  }
+}
+
 void check_for_collisions(game_data &game) {
   if (sprite_collision(game.player.sprite_data, game.scene.foreground) || sprite_collision(game.player.sprite_data, game.scene.foreroof)) {
     game.player.is_dead = true;
     return;
   }
+
   for (int i = 0; i < NUM_POLES; ++i) {
     if (sprite_collision(game.player.sprite_data, game.poles[i].up_pole) || sprite_collision(game.player.sprite_data, game.poles[i].down_pole)) {
       game.player.is_dead = true;
@@ -238,6 +247,7 @@ void check_for_collisions(game_data &game) {
 
 void update_game(game_data &game) {
   if (!game.player.is_dead) {
+    check_for_obstacle_overlap(game);
     check_for_collisions(game);
     handle_input(game.player);
     update_scene(game.scene);
